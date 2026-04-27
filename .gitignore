@@ -35,6 +35,7 @@ coverage/
 jenkins_home/
 prometheus_data/
 grafana_data/
+postgres_data/
 
 # temporary files
 *.tmp

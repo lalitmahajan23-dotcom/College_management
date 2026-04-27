@@ -9,6 +9,7 @@ This project is organized into:
 - `backend/` for the Express API and PostgreSQL access
 - `frontend/` for the React dashboard UI
 - `monitoring/` for Prometheus and Grafana configuration
+- `docker-compose.yml` for the full app stack
 - `docker-compose.monitoring.yml` for the monitoring stack
 - `Jenkinsfile` for CI pipeline automation
 
@@ -108,6 +109,32 @@ npm install
 ```powershell
 cd ..\frontend
 npm install
+```
+
+## Dockerized Setup
+
+The whole project can run in containers with:
+
+```powershell
+docker compose up -d --build
+```
+
+That starts:
+
+- PostgreSQL on `localhost:5432`
+- Backend API on `localhost:5000`
+- Frontend on `localhost:3000`
+- Prometheus on `localhost:9090`
+- Grafana on `localhost:3001`
+
+### Useful Docker commands
+
+```powershell
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f prometheus
+docker compose logs -f grafana
 ```
 
 ## Run the Application
