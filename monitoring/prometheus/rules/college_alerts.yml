@@ -1,0 +1,32 @@
+groups:
+  - name: college-backend-alerts
+    rules:
+      - alert: BackendDown
+        expr: up{job="college-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "College backend is down"
+          description: "Prometheus cannot scrape the backend metrics endpoint."
+
+      - alert: HighBackendLatency
+        expr: histogram_quantile(0.95, sum(rate(college_app_http_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Backend latency is high"
+          description: "The 95th percentile request latency is above 1 second."
+
+      - alert: HighBackendErrorRate
+        expr: sum(rate(college_app_http_requests_total{status_code=~"5.."}[5m])) / sum(rate(college_app_http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Backend error rate is high"
+          description: "More than 5% of recent requests are returning 5xx responses."
