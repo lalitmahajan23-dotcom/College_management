@@ -4,4 +4,4 @@ metadata:
   name: frontend-config
   namespace: college-system
 data:
-  VITE_API_BASE_URL: "http://college.local/api"
+  VITE_API_BASE_URL: "http://localhost:30080"

@@ -59,8 +59,10 @@ Install the following before running the project:
 - Node.js 18+ recommended
 - npm
 - Docker Desktop
+- Kubernetes enabled in Docker Desktop, or another local cluster
+- `kubectl`
 - Jenkins, if you want to run the CI pipeline locally
-- PostgreSQL database
+- PostgreSQL database for a pure local Node setup
 
 ## Environment Variables
 
@@ -111,9 +113,33 @@ cd ..\frontend
 npm install
 ```
 
+## One-Command Startup
+
+The easiest way to start the project from terminal is:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-project.ps1
+```
+
+That starts:
+
+- Jenkins on `http://localhost:8080`
+- SonarQube on `http://localhost:9000`
+- Prometheus on `http://localhost:9090`
+- Grafana on `http://localhost:3001`
+- Backend in Kubernetes on `http://localhost:30080`
+- Frontend in Kubernetes on `http://localhost:30000`
+
+If you only want part of the stack:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-project.ps1 -Mode compose
+powershell -ExecutionPolicy Bypass -File .\start-project.ps1 -Mode k8s
+```
+
 ## Dockerized Setup
 
-The whole project can run in containers with:
+The app-only Docker Compose stack is still available with:
 
 ```powershell
 docker compose up -d --build
@@ -175,6 +201,12 @@ From the repository root:
 docker compose -f docker-compose.monitoring.yml up -d
 ```
 
+### Start SonarQube
+
+```powershell
+docker compose -f docker-compose.sonarqube.yml up -d
+```
+
 ### Open the services
 
 - Jenkins: `http://localhost:8080`
@@ -203,8 +235,35 @@ http://localhost:5000/metrics
 Prometheus is configured to scrape the backend through:
 
 ```text
-host.docker.internal:5000
+backend:5000
+host.docker.internal:30080
 ```
+
+## Kubernetes Autoscaling
+
+The Kubernetes setup now includes HorizontalPodAutoscalers for:
+
+- `backend`
+- `frontend`
+
+These HPAs scale on CPU usage and require Metrics Server.
+
+When you run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-project.ps1 -Mode k8s
+```
+
+the script installs Metrics Server if it is missing, then applies:
+
+- [k8s/autoscaling/backend-hpa.yaml](/c:/Users/admin/Downloads/PROJECTS/College_managment_system/k8s/autoscaling/backend-hpa.yaml)
+- [k8s/autoscaling/frontend-hpa.yaml](/c:/Users/admin/Downloads/PROJECTS/College_managment_system/k8s/autoscaling/frontend-hpa.yaml)
+
+Important:
+
+- HPA will not scale up until the pods actually use enough CPU.
+- To see scaling happen, you need to create load against the backend or frontend.
+- Check status with `kubectl get hpa -n college-system`.
 
 ## Jenkins CI Pipeline
 
@@ -281,6 +340,13 @@ This repository includes a root `.gitignore` that excludes:
 - Confirm Prometheus is running.
 - Confirm the backend is serving `/metrics`.
 - Wait a minute after startup and refresh the query.
+
+### Kubernetes frontend cannot reach the API
+
+- The Kubernetes backend is exposed on `http://localhost:30080`.
+- Rebuild the frontend image after API URL changes.
+- Make sure Docker Desktop Kubernetes is enabled before applying manifests.
+- If `kubectl config current-context` is empty, run `kubectl config use-context docker-desktop` after enabling Kubernetes in Docker Desktop.
 
 ## Suggested Next Steps
 

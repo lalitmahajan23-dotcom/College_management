@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: backend
-          image: docker.io/your-dockerhub-user/college-backend:latest
+          image: college-backend:local
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           envFrom:

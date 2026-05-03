@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: docker.io/your-dockerhub-user/college-frontend:latest
+          image: college-frontend:local
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           envFrom:

@@ -11,6 +11,7 @@ scrape_configs:
     static_configs:
       - targets:
           - backend:5000
+          - host.docker.internal:30080
 
   - job_name: "prometheus"
     static_configs:
