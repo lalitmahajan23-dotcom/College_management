@@ -54,15 +54,17 @@ Fix:
 }
 
 function Ensure-MetricsServer {
-    $metricsApiReady = $false
-    try {
-        $apiService = kubectl get apiservice v1beta1.metrics.k8s.io -o jsonpath="{.status.conditions[?(@.type=='Available')].status}" 2>$null
-        if ($apiService -eq "True") {
-            $metricsApiReady = $true
+    function Test-MetricsApiReady {
+        try {
+            $apiService = kubectl get apiservice v1beta1.metrics.k8s.io -o jsonpath="{.status.conditions[?(@.type=='Available')].status}" 2>$null
+            return ($apiService -eq "True")
+        } catch {
+            return $false
         }
-    } catch {
-        $metricsApiReady = $false
     }
+
+    $metricsApiReady = $false
+    $metricsApiReady = Test-MetricsApiReady
 
     if (-not $metricsApiReady) {
         Write-Step "Installing Metrics Server for autoscaling"
@@ -73,23 +75,18 @@ function Ensure-MetricsServer {
             "https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.8.1/components.yaml"
         )
 
-        $deadline = (Get-Date).AddMinutes(3)
+        $deadline = (Get-Date).AddMinutes(5)
         while ((Get-Date) -lt $deadline) {
-            try {
-                $apiService = kubectl get apiservice v1beta1.metrics.k8s.io -o jsonpath="{.status.conditions[?(@.type=='Available')].status}" 2>$null
-                if ($apiService -eq "True") {
-                    $metricsApiReady = $true
-                    break
-                }
-            } catch {
-                $metricsApiReady = $false
+            if (Test-MetricsApiReady) {
+                $metricsApiReady = $true
+                break
             }
 
             Start-Sleep -Seconds 5
         }
 
         if (-not $metricsApiReady) {
-            throw "Metrics Server was installed but the metrics API did not become ready within 3 minutes."
+            Write-Warning "Metrics Server was installed, but the metrics API did not become ready within 5 minutes. The app will continue, but HPA scaling will not work until Metrics Server is healthy."
         }
     }
 }
@@ -110,15 +107,9 @@ function Start-KubernetesApp {
     Write-Step "Applying Kubernetes manifests"
     Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/namespace.yaml")
     Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/postgres")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/backend/configmap.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/backend/secret.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/backend/service.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/backend/deployment.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/frontend/configmap.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/frontend/service.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/frontend/deployment.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/autoscaling/backend-hpa.yaml")
-    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/autoscaling/frontend-hpa.yaml")
+    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/backend")
+    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/frontend")
+    Invoke-CheckedCommand @("kubectl", "apply", "--validate=false", "-f", "k8s/autoscaling")
 
     Write-Step "Starting local port-forwards for browser access"
     Start-Process -WindowStyle Hidden -FilePath "powershell.exe" -ArgumentList @(

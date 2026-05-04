@@ -61,22 +61,36 @@ pipeline {
 
         stage('SonarQube Backend') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'sonar-scanner -Dproject.settings=backend/sonar-project.properties'
-                }
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                script {
+                    def scannerHome = tool 'SonarScanner'
+                    withSonarQubeEnv('SonarQube') {
+                        withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                            dir('backend') {
+                                sh 'sonar-scanner -Dproject.settings=sonar-project.properties'
+                            }
+                        }
+                    }
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
                 }
             }
         }
 
         stage('SonarQube Frontend') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'sonar-scanner -Dproject.settings=frontend/sonar-project.properties'
-                }
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                script {
+                    def scannerHome = tool 'SonarScanner'
+                    withSonarQubeEnv('SonarQube') {
+                        withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                            dir('frontend') {
+                                sh 'sonar-scanner -Dproject.settings=sonar-project.properties'
+                            }
+                        }
+                    }
+                    timeout(time: 5, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
                 }
             }
         }

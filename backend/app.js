@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors"); // Import cors
 const client = require("prom-client");
+const pool = require("./src/config/db");
 const authRoutes = require("./src/routes/authRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const facultyRoutes = require("./src/routes/facultyRoutes");
@@ -52,6 +53,19 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+app.get("/livez", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+app.get("/readyz", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.status(200).json({ status: "ready" });
+  } catch (error) {
+    res.status(503).json({ status: "not_ready" });
+  }
 });
 
 app.get("/metrics", async (_req, res) => {
