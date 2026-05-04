@@ -63,15 +63,17 @@ pipeline {
             steps {
                 script {
                     def scannerHome = tool 'SonarScanner'
-                    withSonarQubeEnv('SonarQube') {
-                        withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                            dir('backend') {
-                                sh 'sonar-scanner -Dproject.settings=sonar-project.properties'
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        withSonarQubeEnv('SonarQube') {
+                            withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                                dir('backend') {
+                                    sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dproject.settings=sonar-project.properties'
+                                }
                             }
                         }
-                    }
-                    timeout(time: 5, unit: 'MINUTES') {
-                        waitForQualityGate abortPipeline: true
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: true
+                        }
                     }
                 }
             }
@@ -81,15 +83,17 @@ pipeline {
             steps {
                 script {
                     def scannerHome = tool 'SonarScanner'
-                    withSonarQubeEnv('SonarQube') {
-                        withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
-                            dir('frontend') {
-                                sh 'sonar-scanner -Dproject.settings=sonar-project.properties'
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        withSonarQubeEnv('SonarQube') {
+                            withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                                dir('frontend') {
+                                    sh 'sonar-scanner -Dsonar.token=$SONAR_TOKEN -Dproject.settings=sonar-project.properties'
+                                }
                             }
                         }
-                    }
-                    timeout(time: 5, unit: 'MINUTES') {
-                        waitForQualityGate abortPipeline: true
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: true
+                        }
                     }
                 }
             }
